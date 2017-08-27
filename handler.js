@@ -57,19 +57,22 @@ const update = (params) => {
       Key: {
         "device_token": params.device_token
       },
+      UpdateExpression: "set #status = :status",
+      ExpressionAttributeNames: {
+        "#status": "status"
+      },
       ExpressionAttributeValues: {
         ":status": params.status
       },
-      ReturnValues: "UPDATED_NEW"
+      ReturnValues: "ALL_NEW"
     };
 
     dynamo.update(user_params, function (err, data) {
       if (err) {
         reject(err);
       } else {
-        console.log(data);
-
-        resolve(data);
+        console.log(data.Attributes);
+        resolve(data.Attributes);
       }
     })
   })
@@ -136,7 +139,15 @@ app.post('/api/v1/status_check', (req, res) => {
 
 app.post('/api/v1/status', (req, res) => {
   console.log(req.body);
-  res.send(req.body);
+  update(req.body)
+    .then((data) => {
+      console.log(data);
+      res.send(data);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(400).send(err)
+    });
 });
 
 exports.app = require('express-on-serverless')(app);
